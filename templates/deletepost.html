@@ -1,0 +1,41 @@
+<!-- This deletepost.html page contains the code that displays the delete post
+form along with any error messages. -->
+
+{% extends "base.html" %}
+
+{% block content %}
+  <h2>Delte the Post Page</h2>
+
+  <form method="post">
+
+    <div class="error">
+      <h3>Confirm that you want to Delete the post by hitting the Delete
+          button below.
+      </h3>
+    </div>
+
+    <label class="post-form-title">
+      <div>Subject</div>
+        <input type="text" name="subject" value="{{subject}}">
+    </label>
+    <br>
+    <br>
+    <br>
+
+    <label class="post-form-title">
+      <div>Blog Content</div>
+        <textarea name="content" rows="8" cols="80">{{content}}</textarea>
+    </label>
+    <br>
+
+    <div class="error">
+      <h3>{{error}}</h3>
+    </div>
+    <br>
+    <br>
+
+    <input value = "Delete" type="submit" name="del">
+    <input value = "Cancel" type="submit" name="can">
+
+  </form>
+{% endblock %}

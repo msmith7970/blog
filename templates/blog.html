@@ -1,0 +1,40 @@
+<!-- This blog.html page will display the entire blog using jinja templates
+for both the post and comment pages. -->
+
+{% extends "base.html" %}
+
+{% block content %}
+<br>
+<br>
+<h3>To enter a new post, please click
+  <a class="links-link" href="/blog/newpost">here.</a>
+</h3>
+<br><br>
+  {% for p in posts %}
+    {{ p.render() | safe }}
+    <br><br>
+    {% set comment_flag = False %}
+    <h4>Comments</h4>
+    <ul>
+      {% for c in comments %}
+
+        {% if p.key().id()  == c.post_id | int %}
+          {% set comment_flag = True %}
+          <li>
+            {{ c.render() | safe }}
+          </li>
+        {% endif %}
+
+        {% if loop.last and comment_flag == False %}
+          <li>
+            <p>Be the first person to make a comment on this Post! </p>
+          </li>
+        {% endif %}
+
+    {% endfor %}
+    </ul>
+
+    <br><br><br>
+  {% endfor %}
+
+{% endblock %}

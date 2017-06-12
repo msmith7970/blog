@@ -1,0 +1,14 @@
+<!-- This welcome-form.html page displays a welcome message to a user after
+they successfully sign in. -->
+
+{% extends "base.html" %}
+
+{% block content %}
+  <h3>Welcome, {{username}} !</H2>
+  <h3>You have successfully signed in!!!</H2>
+
+  <p>
+    <h4>To continue on to "The Blog" click <a class ="links-link" href="/blog">here.</a></h4>
+  </p>
+
+{% endblock %}

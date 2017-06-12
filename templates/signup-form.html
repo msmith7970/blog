@@ -1,0 +1,67 @@
+<!-- This signup-form.html page contains the code that displays the user
+signup form.  This form collects all the data and verifies it.  If valid the
+user is added to the database.  If user enters invalid data then this page
+is rendered again with the correconding error message. -->
+
+{% extends "base.html" %}
+
+{% block content %}
+
+  <h3>User Sign Up Screen</h3>
+
+  <form method="post">
+    <table>
+      <tr>
+        <td class="label" >Username</td>
+        <td>
+          <input type="text" name="username" size="50" value={{username}}>
+        </td>
+        <td class="error">
+          {{error_username}}
+        </td>
+      </tr>
+
+      <tr>
+        <td class="label" >Password</td>
+        <td>
+          <input type="password" name="password" size="50" value="">
+        </td>
+        <td class="error">
+          {{error_password}}
+        </td>
+      </tr>
+
+      <tr>
+        <td class="label" >Verify Password</td>
+        <td>
+          <input type="password" name="verify" size="50" value="">
+        </td>
+        <td class="error">
+          {{error_verify}}
+        </td>
+      </tr>
+
+      <tr>
+        <td class="label" >email (optional)</td>
+        <td>
+          <input type="text" name="email" size="50" value={{email}}>
+        </td>
+        <td class="error">
+          {{error_email}}
+        </td>
+      </tr>
+      </br>
+      </br>
+    </table>
+    <br>
+    <br>
+    <input type="submit">
+  </form>
+
+  <br>
+  <br>
+  <p>If you are already a reistered user and wish to login, please click here
+    <a class="links-link" href='/login'>Login</a>
+  </p>
+
+{% endblock %}

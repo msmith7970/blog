@@ -1,0 +1,33 @@
+<!-- This editpost.html page contains the code that displays the edit post
+form along with any error messages. -->
+
+{% extends "base.html" %}
+
+{% block content %}
+  <h2>Edit the Post Page</h2>
+
+  <form method="post">
+
+    <label class="post-form-title">
+      <div>Subject</div>
+        <input type="text" name="subject" value="{{subject}}">
+    </label>
+
+    <br>
+    <br>
+    <br>
+
+    <label class="post-form-title">
+      <div>Blog Content</div>
+        <textarea name="content" rows="8" cols="80">{{content}}</textarea>
+    </label>
+
+    <br>
+    <div class="error">{{error}}</div>
+    <br>
+    <br>
+    <input value = "Submit" type="submit" name="sub">
+    <input value = "Cancel" type="submit" name="can">
+
+  </form>
+{% endblock %}

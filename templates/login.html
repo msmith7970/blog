@@ -1,0 +1,52 @@
+<!-- This login.html page contains the code that displays the login form. -->
+
+{% extends "base.html" %}
+
+{% block content %}
+
+  <h3>User Login Form</h3>
+
+  <form method="post">
+    <table>
+      <tr>
+        <td class="label">
+          Username
+        </td>
+        <td>
+          <input type="text" name="username" size="50" value={{username}}>
+        </td>
+        <td class="error">
+          {{error_username}}
+        </td>
+      </tr>
+
+      <tr>
+        <td class="label">
+          Password
+        </td>
+        <td>
+          <input type="password" name="password" size="50" value="">
+        </td>
+        <td class="error">
+          {{error_password}}
+        </td>
+      </tr>
+
+    </table>
+
+    <div class="error">
+      {{error}}
+    </div>
+    </br>
+    </br>
+
+    <input type="submit">
+  </form>
+
+  <br>
+  <br>
+  <p>If you are not a reistered user and wish to signup, please click here
+    <a class="links-link" href='/signup'>Signup</a>
+  </p>
+
+{% endblock %}

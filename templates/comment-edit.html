@@ -1,0 +1,48 @@
+<!-- This comment-edit.html page contains the code that displays the edit
+comment form along with any error messages. -->
+
+{% extends "base.html" %}
+
+{% block content %}
+  <h2>Edit the Comment Page</h2>
+
+  <form method="post">
+
+    <div class="error">
+      <h3>Make the Edit to the comment and hit the Submit button below.</h3>
+      <h3>Or selcect the Cancel button to go back.</h3>
+    </div>
+
+    <label class="comment-content">
+      <div class="comment-form-title">Subject</div>
+        {{subject}}
+    </label>
+    <br>
+    <br>
+    <br>
+
+    <label class="comment-content">
+      <div class="comment-form-title">Post Content</div>
+        {{content}}
+    </label>
+    <br>
+
+    <label class="comment-content">
+      <div class="comment-form-title">Comment</div>
+        <textarea name="comment" rows="8" cols="80">{{comment}}</textarea>
+    </label>
+    <br>
+
+    <div class="error">
+      <h3>{{error}}</h3>
+    </div>
+    <br>
+
+    <input value = "Submit" type="submit" name="sub">
+    <input value = "Cancel" type="submit" name="can">
+
+    <br>
+    <br>
+    <br>
+  </form>
+{% endblock %}

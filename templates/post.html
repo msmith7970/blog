@@ -1,0 +1,43 @@
+<!-- This post.html page contains the code that displays the post
+section of the blog post. -->
+
+<div class="post-heading backgrnd-color">
+
+  <div class ="row">
+    <div class="post-title col-10">
+      {{p.subject}}
+    </div>
+
+    <div class="post-date col-2">
+      {{p.created.strftime("%b %d, %Y")}}
+    </div>
+  </div>
+
+  <div class="post-content row">
+    <div class="col-6">
+        Post by - {{p.creator}}
+    </div>
+    <div class="col-6 likes">
+        <b>(This Post has {{p.likes_count}} Likes.)</b>
+    </div>
+  </div>
+</div
+
+<div class="post-content row">
+  <div class="col-12 post-content">
+  {{p._render_text | safe}}
+</div>
+
+<div class="col-12 links-area">
+  <a class ="links-link"
+    href="/editpost?post_id={{(p.key().id()) | string}}">Edit</a>
+  |
+  <a class ="links-link"
+    href="/deletepost?post_id={{(p.key().id()) | string}}">Delete</a>
+  |
+  <a class ="links-link"
+    href="/likepost?post_id={{(p.key().id()) | string}}">Like</a>
+  |
+  <a class ="links-link"
+    href="/comment-new?post_id={{(p.key().id()) | string}}">Add a Comment</a>
+</div>

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+
+<!-- This base.html file is the HTML portion that is resued at the top of
+each page in The Blog website. -->
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" type="text/css" href="/css/main.css" />
+    <title class="blog-title">The Blog</title>
+</head>
+
+<body>
+  <a href="/blog" class="main-title">
+    The Blog
+  </a>
+  <div class="login-area">
+    {% if user %}
+      Welcome {{user.name}} ! | (<a class="login-link" href="/logout">logout</a>)
+    {% else %}
+      <a class="login-link" href="/login">login</a>
+      |
+      <a class="login-link" href="/signup">signup</a>
+    {% endif %}
+  </div>
+
+  {% block content %}
+  {% endblock %}
+
+</body>
+</html>

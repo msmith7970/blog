@@ -1,0 +1,16 @@
+<!-- This permalink.html page contains the code that displays the new post
+after the user hits the submit button to submit the new post. -->
+
+{% extends "base.html" %}
+
+{% block content %}
+  {{post.render() | safe}}
+
+  <p class="blog-title">
+    To Continue on to the Blog click on "The Blog" main title from above.
+  </p>
+  <br>
+  <div class="error">
+    {{error}}
+  </div>
+{% endblock %}

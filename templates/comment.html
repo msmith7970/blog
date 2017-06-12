@@ -1,0 +1,30 @@
+<!-- This comment.html page contains the code that displays the comment
+section of the blog post. -->
+
+<div class="comment-heading">
+
+  <div class="comment-comment">
+    {{c._render_text | safe}}
+  </div>
+
+  <div class="col-12 row">
+    <div class="comment-creator">
+      <p> Comment by - {{c.comment_creator}} </p>
+    </div>
+    <br>
+
+    <div class="col-12 links-area" name="comment_links">
+      <a class ="links-link"
+        href="/comment-edit?comment_id={{(c.key().id()) | string}}">
+        Edit
+      </a>
+      |
+      <a class ="links-link"
+        href="/comment-delete?comment_id={{(c.key().id()) | string}}">
+        Delete
+      </a>
+    </div>
+
+  </div>
+
+</div>
