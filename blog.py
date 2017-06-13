@@ -6,7 +6,7 @@ import hashlib
 import hmac
 from string import letters
 import random
-
+import logging
 from google.appengine.ext import db
 
 # Secret password used in the hash_str function to help hash the users id.
@@ -45,6 +45,21 @@ def check_secure_val(secure_val):
     val = secure_val.split('|')[0]
     if secure_val == make_secure_val(val):
         return val
+
+
+def login_required(func):
+    """ A decorator to confirm a user is logged in or redirect them to the
+    Login page if not.
+    """
+
+    def login(self, *args, **kwargs):
+        # Redirect to login if user not logged in, else continue on with
+        # the function.
+        if not self.user:
+            self.redirect('/login')
+        else:
+            func(self, *args, **kwargs)
+    return login
 
 
 class Handler(webapp2.RequestHandler):
@@ -240,46 +255,45 @@ class LikePost(Handler):
 # currently logged in.  If logged in then it will increment the likes counter
 # 'likes_count' and update it in the Post kind.  Then redirect to the main
 # Blog page.
+    @login_required
     def get(self):
-        if not self.user:
-            self.redirect('/login')
+        post_id = self.request.get('post_id')
+        post = Post.get_by_id(int(post_id), parent=blog_key())
+        if (self.user.name != post.creator) and \
+           (self.user.name not in post.likes_user_list):
+            post.likes_user_list.append(self.user.name)
+            post.likes_count += 1
+            post.put()
+            self.redirect('/blog')
         else:
-            post_id = self.request.get('post_id')
-            post = Post.get_by_id(int(post_id), parent=blog_key())
-            if (self.user.name != post.creator) and \
-               (self.user.name not in post.likes_user_list):
-                post.likes_user_list.append(self.user.name)
-                post.likes_count += 1
-                post.put()
-                self.redirect('/blog')
-            else:
-                error = "The creator of this post cannot like their own post \
-                          and a user can only like it once."
-                self.render('permalink.html',
-                            post=post,
-                            error=error,
-                            )
+            error = "The creator of this post cannot like their own post \
+                      and a user can only like it once."
+            self.render('permalink.html',
+                        post=post,
+                        error=error,
+                        )
 
 
 # Used with the signup handler to validate a users name.  It must be at least
 # 3 and 20 characters long and be composed up letters (either small case or
 # Capital) and numbers 0 thru 9 with dashes in between.
-USER_RE = re.compile(r"^[a-zA-Z0-9_-]{3,20}$")
 def valid_username(username):
+    USER_RE = re.compile(r"^[a-zA-Z0-9_-]{3,20}$")
     return username and USER_RE.match(username)
+
 
 # Used with the signup handler to validate a users password.  This looks for
 # a password of between 3 and 20 characters.
-PSWD_RE = re.compile(r"^.{3,20}$")
 def valid_password(password):
+    PSWD_RE = re.compile(r"^.{3,20}$")
     return password and PSWD_RE.match(password)
 
 
 # Used with the signup handler to validate a users email address.  This looks
 # for characters followed by the @ sign followed by more characters followed
 # by a . (dot) and followed by some more characters.
-EMAIL_RE = re.compile(r"^[\S]+@[\S]+.[\S]+$")
 def valid_email(email):
+    EMAIL_RE = re.compile(r"^[\S]+@[\S]+.[\S]+$")
     return not email or EMAIL_RE.match(email)
 
 
@@ -419,12 +433,11 @@ class NewPost(Handler):
     newpost page along with an error message.
     """
 
+    @login_required
     def get(self):
-        if self.user:
-            self.render("newpost.html")
-        else:
-            self.redirect('/login')
+        self.render("newpost.html")
 
+    @login_required
     def post(self):
         submit = self.request.get('sub')
         cancel = self.request.get('can')
@@ -468,31 +481,33 @@ class EditPost(Handler):
     with an error message.
     """
 
+    @login_required
     def get(self):
-        if not self.user:
-            self.redirect('/login')
+        post_id = self.request.get('post_id')
+        post = Post.get_by_id(int(post_id), parent=blog_key())
+        if not post:
+            self.error(404)
+            return
+        subject = post.subject
+        content = post.content
+        creator = post.creator
+        if self.user.name == creator:
+            self.render('editpost.html',
+                        subject=subject,
+                        content=content,
+                        creator=creator,
+                        )
         else:
-            post_id = self.request.get('post_id')
-            post = Post.get_by_id(int(post_id), parent=blog_key())
-            subject = post.subject
-            content = post.content
-            creator = post.creator
-            if self.user.name == creator:
-                self.render('editpost.html',
-                            subject=subject,
-                            content=content,
-                            creator=creator,
-                            )
-            else:
-                error = "Sorry! You must be the author of this post in order \
-                         to edit it."
-                self.render('permalink.html',
-                            subject=subject,
-                            content=content,
-                            error=error,
-                            post=post,
-                            )
+            error = "Sorry! You must be the author of this post in order \
+                     to edit it."
+            self.render('permalink.html',
+                        subject=subject,
+                        content=content,
+                        error=error,
+                        post=post,
+                        )
 
+    @login_required
     def post(self):
         post_id = self.request.get('post_id')
         subject = self.request.get('subject')
@@ -505,6 +520,9 @@ class EditPost(Handler):
 
         if submit == "Submit":
             post = Post.get_by_id(int(post_id), parent=blog_key())
+            if not post:
+                self.error(404)
+                return
             creator = post.creator
             if self.user.name == creator:
                 if subject and content:
@@ -536,36 +554,41 @@ class DeletePost(Handler):
     the post otherwise will be directed back to the delete page with an error
     message.  The user sill also have a cancel option.
     """
-    def get(self):
-        if self.user:
-            post_id = self.request.get('post_id')
-            post_id = int(post_id)
-            post = Post.get_by_id(post_id, parent=blog_key())
-            if self.user.name == post.creator:
-                self.render('deletepost.html',
-                            subject=post.subject,
-                            content=post.content,
-                            creator=post.creator,
-                            )
-            else:
-                error = "You must be the author of this post in order to \
-                         delete it."
-                self.render('deletepost.html',
-                            subject=post.subject,
-                            content=post.content,
-                            creator=post.creator,
-                            error=error,
-                            )
-        else:
-            self.redirect('/login')
 
+    @login_required
+    def get(self):
+        post_id = self.request.get('post_id')
+        post_id = int(post_id)
+        post = Post.get_by_id(post_id, parent=blog_key())
+        if not post:
+            self.error(404)
+            return
+        if self.user.name == post.creator:
+            self.render('deletepost.html',
+                        subject=post.subject,
+                        content=post.content,
+                        creator=post.creator,
+                        )
+        else:
+            error = "You must be the author of this post in order to \
+                     delete it."
+            self.render('deletepost.html',
+                        subject=post.subject,
+                        content=post.content,
+                        creator=post.creator,
+                        error=error,
+                        )
+
+    @login_required
     def post(self):
         post_id = self.request.get('post_id')
         confirmed = self.request.get('del')
         cancel = self.request.get('can')
         post_id = int(post_id)
         post = Post.get_by_id(post_id, parent=blog_key())
-
+        if not post:
+            self.error(404)
+            return
         if cancel == 'Cancel':
             self.redirect('/blog')
 
@@ -599,16 +622,17 @@ class NewComment(Handler):
     error message.
     """
 
+    @login_required
     def get(self):
-        if self.user:
             self.render_comment()
-        else:
-            self.redirect('/login')
 
     def render_comment(self, comment="", error=""):
         post_id = self.request.get('post_id')
         post_id = int(post_id)
         post = Post.get_by_id(post_id, parent=blog_key())
+        if not post:
+            self.error(404)
+            return
         self.render("comment-new.html",
                     subject=post.subject,
                     content=post.content,
@@ -616,6 +640,7 @@ class NewComment(Handler):
                     post_id=post_id,
                     )
 
+    @login_required
     def post(self):
         # Get the cancel indicator and if user hit the Cancel button then
         # return to the main blog.
@@ -628,6 +653,9 @@ class NewComment(Handler):
             post_id = self.request.get('post_id')
             post_id = int(post_id)
             post = Post.get_by_id(post_id, parent=blog_key())
+            if not post:
+                self.error(404)
+                return
             if comment:
                 c = Comment(parent=comment_key(),
                             comment=comment,
@@ -665,36 +693,41 @@ class EditComment(Handler):
     direct them to the page with an error message.
     """
 
+    @login_required
     def get(self):
-        if not self.user:
+        comment_id = self.request.get('comment_id')
+        if not comment_id:
             self.redirect('/login')
+            return
+        comment_id = int(comment_id)
+        comment = Comment.get_by_id(comment_id, parent=comment_key())
+        if not comment:
+            self.error(404)
+            return
+        post_id = int(comment.post_id)
+        post = Post.get_by_id(post_id, parent=blog_key())
+        if self.user.name == comment.comment_creator:
+            self.render('comment-edit.html',
+                        comment=comment.comment,
+                        creator=comment.comment_creator,
+                        post_id=post_id,
+                        comment_id=comment_id,
+                        subject=post.subject,
+                        content=post.content,
+                        )
         else:
-            comment_id = self.request.get('comment_id')
-            comment_id = int(comment_id)
-            comment = Comment.get_by_id(comment_id, parent=comment_key())
-            post_id = int(comment.post_id)
-            post = Post.get_by_id(post_id, parent=blog_key())
-            if self.user.name == comment.comment_creator:
-                self.render('comment-edit.html',
-                            comment=comment.comment,
-                            creator=comment.comment_creator,
-                            post_id=post_id,
-                            comment_id=comment_id,
-                            subject=post.subject,
-                            content=post.content,
-                            )
-            else:
-                error = "You must be the author of this comment in order to \
-                         edit it."
-                self.render('comment-edit.html',
-                            comment=comment.comment,
-                            creator=comment.comment_creator,
-                            subject=post.subject,
-                            content=post.content,
-                            post_id=post_id,
-                            error=error,
-                            )
+            error = "You must be the author of this comment in order to \
+                     edit it."
+            self.render('comment-edit.html',
+                        comment=comment.comment,
+                        creator=comment.comment_creator,
+                        subject=post.subject,
+                        content=post.content,
+                        post_id=post_id,
+                        error=error,
+                        )
 
+    @login_required
     def post(self):
         comment_id = self.request.get('comment_id')
         edit_comment = self.request.get('comment')
@@ -702,6 +735,9 @@ class EditComment(Handler):
         cancel = self.request.get('can')
         comment_id = int(comment_id)
         comment = Comment.get_by_id(comment_id, parent=comment_key())
+        if not comment:
+            self.error(404)
+            return
         post_id = int(comment.post_id)
         post = Post.get_by_id(post_id, parent=blog_key())
         # If the Cancel button is selected return back to the blog.
@@ -764,35 +800,38 @@ class DeleteComment(Handler):
     page with a second error message.  The user sill also have a cancel
     option.
     """
+
+    @login_required
     def get(self):
         # if the user selects the delete comment option then display the
         # post with the comment that is about to be deleted and ask the
         # user to confirm they want to really delete this particular comment
         # before it is deleted.
-        if self.user:
-            comment_id = self.request.get('comment_id')
-            comment_id = int(comment_id)
-            comment = Comment.get_by_id(comment_id, parent=comment_key())
-            post_id = int(comment.post_id)
-            post = Post.get_by_id(post_id, parent=blog_key())
-            if self.user.name == comment.comment_creator:
-                self.render('comment-delete.html',
-                            comment=comment.comment,
-                            subject=post.subject,
-                            content=post.content,
-                            )
-            else:
-                error = "You must be the author of this comment in order to \
-                         delete it."
-                self.render('comment-delete.html',
-                            comment=comment.comment,
-                            subject=post.subject,
-                            content=post.content,
-                            error=error,
-                            )
+        comment_id = self.request.get('comment_id')
+        comment_id = int(comment_id)
+        comment = Comment.get_by_id(comment_id, parent=comment_key())
+        if not comment:
+            self.error(404)
+            return
+        post_id = int(comment.post_id)
+        post = Post.get_by_id(post_id, parent=blog_key())
+        if self.user.name == comment.comment_creator:
+            self.render('comment-delete.html',
+                        comment=comment.comment,
+                        subject=post.subject,
+                        content=post.content,
+                        )
         else:
-            self.redirect("/login")
+            error = "You must be the author of this comment in order to \
+                     delete it."
+            self.render('comment-delete.html',
+                        comment=comment.comment,
+                        subject=post.subject,
+                        content=post.content,
+                        error=error,
+                        )
 
+    @login_required
     def post(self):
         # First check to see if the Cancel button was selected and if so return
         # the user back to the Blog.
@@ -805,6 +844,9 @@ class DeleteComment(Handler):
         confirmed = self.request.get('del')
         comment_id = int(comment_id)
         comment = Comment.get_by_id(comment_id, parent=comment_key())
+        if not comment:
+            self.error(404)
+            return
         post_id = int(comment.post_id)
         post = Post.get_by_id(post_id, parent=blog_key())
         if self.user.name == comment.comment_creator:
